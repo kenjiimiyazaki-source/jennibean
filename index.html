@@ -1,0 +1,249 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Jennifer @23rd — Invitation</title>
+
+  <!-- QR library -->
+  <script src="https://cdn.jsdelivr.net/npm/qrcodejs/qrcode.min.js"></script>
+
+  <!-- Pink + creative minimal styles -->
+  <style>
+    :root{
+      --bg1: #fff0f6;
+      --bg2: #ffeef8;
+      --panel: #ffffff;
+      --accent: #ff4da6;
+      --accent-2: #ff85c1;
+      --muted: #6b6b6b;
+      --radius: 14px;
+      font-family: Inter, "Segoe UI", Roboto, Arial, sans-serif;
+      color-scheme: light;
+    }
+    html,body{height:100%;margin:0;background:linear-gradient(135deg,var(--bg1),var(--bg2));color:#111}
+    .wrap{min-height:100%;display:flex;align-items:center;justify-content:center;padding:36px}
+    .card{width:100%;max-width:980px;background:var(--panel);border-radius:var(--radius);box-shadow:0 12px 40px rgba(16,24,40,0.06);padding:28px;display:grid;grid-template-columns:1fr 360px;gap:24px;align-items:start}
+    h1{margin:0;font-size:1.6rem;letter-spacing:-0.4px}
+    .meta{color:var(--muted);margin-top:6px}
+    .left{padding-right:6px}
+    .search{margin-top:18px;display:flex;gap:10px;align-items:center}
+    .search input{flex:1;padding:12px 14px;border-radius:12px;border:1px solid #f0d8e8;font-size:1rem;outline:none;background:linear-gradient(180deg,#fff,#fff);box-shadow:inset 0 1px 0 rgba(0,0,0,0.02)}
+    .search button{background:linear-gradient(180deg,var(--accent),var(--accent-2));border:none;color:#fff;padding:10px 14px;border-radius:12px;font-weight:700;cursor:pointer}
+    .hint{margin-top:10px;color:var(--muted);font-size:0.95rem}
+    .result{margin-top:18px;padding:14px;background:linear-gradient(180deg,#fff,#fff);border-radius:12px}
+    .notfound{color:#c0392b;font-weight:700}
+    .guestTitle{font-weight:700;margin-bottom:6px}
+    aside{padding:18px;border-radius:12px;background:linear-gradient(180deg,#fff,#fff);border:1px solid rgba(0,0,0,0.03)}
+    .qr-area{text-align:center}
+    #qrcode{display:inline-block;margin-top:8px}
+    .download{display:inline-block;margin-top:12px;padding:8px 12px;border-radius:10px;border:1px solid var(--accent);color:var(--accent);text-decoration:none;font-weight:700;background:#fff}
+    .small{font-size:0.92rem;color:var(--muted)}
+    footer{margin-top:18px;font-size:0.85rem;color:var(--muted)}
+    @media (max-width:880px){.card{grid-template-columns:1fr;padding:18px}aside{order:2}}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <main class="card" role="main" aria-labelledby="title">
+      <section class="left">
+        <h1 id="title">Jennifer @23rd</h1>
+        <div class="meta">December 27, 2025 · 11:00 PM · Tango, Poblacion</div>
+        <div class="hint">Host: Jennifer Hotz — Minimal, pink & creative invitation</div>
+
+        <div class="search" aria-label="Check invitation">
+          <input id="nameInput" placeholder="Enter your full name (e.g. Alex Cortez)" autocomplete="off" />
+          <button id="checkBtn">Check</button>
+        </div>
+
+        <div class="result" id="resultArea" aria-live="polite">
+          <div id="startMsg">
+            <div style="font-weight:700">Welcome</div>
+            <div class="hint">Type your name and press <strong>Check</strong>. If you're invited, a personalized QR will appear.</div>
+          </div>
+
+          <div id="found" style="display:none">
+            <div class="guestTitle" id="guestTitle"></div>
+            <div id="guestNote" class="small"></div>
+            <div style="margin-top:12px" id="qrWrap"></div>
+            <div style="margin-top:12px"><a id="downloadBtn" class="download" href="#">Download QR</a></div>
+          </div>
+
+          <div id="notFound" style="display:none" class="notfound">
+            Sorry — you are not on the guest list. If you believe this is a mistake, contact the host.
+          </div>
+        </div>
+      </section>
+
+      <aside>
+        <div style="display:flex;flex-direction:column;gap:12px">
+          <div>
+            <div style="font-weight:700">Event Details</div>
+            <div class="small">Jennifer @23rd</div>
+            <div class="small">December 27, 2025 · 11:00 PM</div>
+            <div class="small">Tango, Poblacion</div>
+          </div>
+
+          <div>
+            <div style="font-weight:700">Host</div>
+            <div class="small">Jennifer Hotz</div>
+          </div>
+
+          <div>
+            <div style="font-weight:700">Instructions</div>
+            <div class="small">Enter your full name exactly as given in the invitation. QR links are one-time validated by the host's Google Script.</div>
+          </div>
+
+          <footer>
+            <div class="small">To edit guest names, open this file and change the <code>guestList</code> array in the script section.</div>
+          </footer>
+        </div>
+      </aside>
+    </main>
+  </div>
+
+  <script>
+    /*
+      IMPORTANT:
+      - This is a static (client-side) page containing the guest list.
+      - Each generated QR points to the Google Apps Script URL (one-time validation).
+      - To keep the guest list private you would move validation server-side.
+    */
+
+    // ---------- CONFIG ----------
+    // Your Google Apps Script web app URL (the one you deployed). It must be the full exec URL.
+    const SCRIPT_EXEC_URL = "https://script.google.com/macros/s/AKfycbzFW7tH0LZaPylww8R5cen13BZVCrUumUMLaVQobxfQOpCbUX64Hasifmx7lB88ZXyVFA/exec";
+
+    // Sample guest list (10 names). Edit, add, or replace with your 40-50 guests.
+    // Each object needs: name (displayed) and id (URL-safe short code).
+    const guestList = [
+      { name: "Ava Thompson", id: "ava01" },
+      { name: "Ethan White", id: "eth01" },
+      { name: "Olivia Martinez", id: "oli01" },
+      { name: "Liam Johnson", id: "liam01" },
+      { name: "Sophia Brown", id: "sop01" },
+      { name: "Noah Davis", id: "noah01" },
+      { name: "Isabella Garcia", id: "isa01" },
+      { name: "Mason Wilson", id: "mas01" },
+      { name: "Mia Anderson", id: "mia01" },
+      { name: "Lucas Clark", id: "luc01" }
+      // Add/edit more guests here...
+    ];
+    // ---------- END CONFIG ----------
+
+    // Helpers
+    const normalizeName = s => (s || "").trim().toLowerCase().replace(/\s+/g,' ');
+    const slugify = s => String(s || "").trim().toLowerCase().replace(/[^a-z0-9\-]/g,'-');
+
+    // Elements
+    const nameInput = document.getElementById("nameInput");
+    const checkBtn = document.getElementById("checkBtn");
+    const startMsg = document.getElementById("startMsg");
+    const found = document.getElementById("found");
+    const notFound = document.getElementById("notFound");
+    const guestTitle = document.getElementById("guestTitle");
+    const guestNote = document.getElementById("guestNote");
+    const qrWrap = document.getElementById("qrWrap");
+    const downloadBtn = document.getElementById("downloadBtn");
+
+    // Build lookup
+    const guestMap = {};
+    guestList.forEach(g => {
+      guestMap[normalizeName(g.name)] = g;
+    });
+
+    // Generate and show QR
+    function showGuest(guest) {
+      startMsg.style.display = "none";
+      notFound.style.display = "none";
+      found.style.display = "block";
+
+      guestTitle.textContent = `Welcome, ${guest.name}`;
+      guestNote.textContent = `Guest ID: ${guest.id}`;
+
+      // Build script URL with guest and name parameters
+      const url = `${SCRIPT_EXEC_URL}?guest=${encodeURIComponent(guest.id)}&name=${encodeURIComponent(guest.name)}`;
+
+      // Render QR
+      qrWrap.innerHTML = "";
+      const container = document.createElement("div");
+      container.id = "qrcode";
+      qrWrap.appendChild(container);
+
+      // qrcodejs will append img or canvas inside container
+      new QRCode(container, {
+        text: url,
+        width: 240,
+        height: 240,
+        colorDark: "#111111",
+        colorLight: "#ffffff",
+        correctLevel: QRCode.CorrectLevel.M
+      });
+
+      // Update download button to save the generated QR
+      downloadBtn.onclick = (e) => {
+        e.preventDefault();
+        // qrcodejs may create an <img> or <canvas>
+        const img = container.querySelector("img");
+        const canvas = container.querySelector("canvas");
+        if (img && img.src) {
+          triggerDownload(img.src, `invite-${guest.id}.png`);
+        } else if (canvas) {
+          const data = canvas.toDataURL("image/png");
+          triggerDownload(data, `invite-${guest.id}.png`);
+        } else {
+          alert("No QR available to download.");
+        }
+      };
+
+      // append visible short link under the QR (optional)
+      const linkNote = document.createElement("div");
+      linkNote.className = "small";
+      linkNote.style.marginTop = "8px";
+      linkNote.textContent = `Link: ${url}`;
+      qrWrap.appendChild(linkNote);
+    }
+
+    function showNotFound() {
+      startMsg.style.display = "none";
+      found.style.display = "none";
+      notFound.style.display = "block";
+    }
+
+    function resetView() {
+      startMsg.style.display = "block";
+      found.style.display = "none";
+      notFound.style.display = "none";
+      qrWrap.innerHTML = "";
+      guestTitle.textContent = "";
+      guestNote.textContent = "";
+    }
+
+    function triggerDownload(dataUrl, filename) {
+      const a = document.createElement("a");
+      a.href = dataUrl;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+    }
+
+    // events
+    checkBtn.addEventListener("click", () => {
+      const input = nameInput.value || "";
+      const norm = normalizeName(input);
+      if (!norm) { resetView(); nameInput.focus(); return; }
+      const guest = guestMap[norm];
+      if (guest) showGuest(guest);
+      else showNotFound();
+    });
+
+    nameInput.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") { e.preventDefault(); checkBtn.click(); }
+    });
+
+    // initialize
+    resetView();
+  </script>
+</body>
+</html>
